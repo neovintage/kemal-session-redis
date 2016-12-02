@@ -1,0 +1,12 @@
+name: kemal-session-redis
+version: 0.1.0
+
+dependencies:
+  kemal-session:
+    github: kemalcr/kemal-session
+    branch: master
+
+authors:
+  - Rimas Silkaitis <neovintage@gmail.com>
+
+license: MIT
