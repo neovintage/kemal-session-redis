@@ -1,9 +1,17 @@
 require "./spec_helper"
 
-describe Kemal::Session::Redis do
-  # TODO: Write tests
+describe "Session::RedisEngine" do
+  describe "options" do
+    describe "url" do
+      it "raises an ArgumentError if not passed" do
+        expect_raises(ArgumentError) do
+          Session::RedisEngine.new({ :whatever => "else" })
+        end
+      end
 
-  it "works" do
-    false.should eq(true)
+      it "can be successfully set up" do
+      end
+    end
+
   end
 end

@@ -1,6 +1,6 @@
 # kemal-session-redis
 
-TODO: Write a description here
+Redis Session Store for kemal-session.
 
 ## Installation
 
@@ -10,7 +10,7 @@ Add this to your application's `shard.yml`:
 ```yaml
 dependencies:
   kemal-session-redis:
-    github: [your-github-name]/kemal-session-redis
+    github: neovintage/kemal-session-redis
 ```
 
 
@@ -38,4 +38,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [[your-github-name]](https://github.com/[your-github-name]) Rimas Silkaitis - creator, maintainer
+- [neovintage](https://github.com/neovintage) Rimas Silkaitis - creator, maintainer

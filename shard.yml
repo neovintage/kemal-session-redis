@@ -5,6 +5,12 @@ dependencies:
   kemal-session:
     github: kemalcr/kemal-session
     branch: master
+  pool:
+    github: ysbaddaden/pool
+    version: 0.2.3
+  redis:
+    github: stefanwille/crystal-redis
+    version: ~> 1.6.7
 
 authors:
   - Rimas Silkaitis <neovintage@gmail.com>
