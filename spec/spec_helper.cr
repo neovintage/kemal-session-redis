@@ -1,8 +1,12 @@
 require "spec"
+require "io"
 require "../src/kemal-session-redis"
 
+Session.config.secret = "super-awesome-secret"
+
 Spec.after_each do
-  # Clear redis out
+  redis = Redis.new
+  redis.flushall
 end
 
 def create_context(session_id : String)

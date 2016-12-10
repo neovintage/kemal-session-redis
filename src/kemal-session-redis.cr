@@ -45,25 +45,34 @@ class Session
     @cache : StorageInstance
     @cached_session_id : String
 
-    def initialize(options : Hash(Symbol, String))
+    def initialize(host = "localhost", port = 6379, password = nil, database = 0, capacity = 20, timeout = 2.0, unixsocket = nil, pool = nil, key_prefix = "kemal:session:")
       @redis = uninitialized ConnectionPool(Redis)
 
-      if options.has_key?(:uri)
-        uri = URI.parse(options[:uri])
-        options[:host] = uri.host
-        options[:post] = uri.port
+      if pool.nil?
+        @redis = ConnectionPool.new(capacity: capacity, timeout: timeout) do
+          Redis.new(
+            host: host,
+            port: port,
+            database: database,
+            unixsocket: unixsocket,
+            password: password
+          )
+        end
+      else
+        @redis = pool.as(ConnectionPool(Redis))
       end
-      block = { Redis.new(options) }
 
-      @redis = ConnectionPool.new({capacity: 1, timeout: 5.0}, &block) unless options.has_key?(:connection_pool)
       @cache = StorageInstance.new
-      @key_prefix = options.has_key?(:key_prefix) ? options[:key_prefix] : "kemal:session:"
+      @key_prefix = key_prefix
+      @cached_session_id = ""
     end
 
     def run_gc
       # Do Nothing. All the sessions should be set with the
       # expiration option on the keys. So long as the redis instance
       # hasn't been set up with maxmemory policy of noeviction
+      # then this should be fine. `noeviction` will cause the redis
+      # instance to fill up and keys will not expire from the instance
     end
 
     def prefix_session(session_id : String)
@@ -78,7 +87,11 @@ class Session
         @cache = StorageInstance.from_json(value)
       else
         @cache = StorageInstance.new
-        conn.set(prefix_session(session_id), @cache.to_json, ex: Session.config.timeout.total_seconds.to_i)
+        conn.set(
+          prefix_session(session_id), 
+          @cache.to_json, 
+          ex: Session.config.timeout.total_seconds.to_i
+        )
       end
       @redis.checkin(conn)
       return @cache
@@ -87,7 +100,7 @@ class Session
     def save_cache
       conn = @redis.checkout
       conn.set(
-        prefix_session(@cached_session_id)
+        prefix_session(@cached_session_id),
         @cache.to_json,
         ex: Session.config.timeout.total_seconds.to_i
       )
