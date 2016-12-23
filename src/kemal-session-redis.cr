@@ -79,6 +79,10 @@ class Session
       "#{@key_prefix}#{session_id}"
     end
 
+    def parse_session_id(key : String)
+      key.sub(@key_prefix, "")
+    end
+
     def load_into_cache(session_id)
       @cached_session_id = session_id
       conn = @redis.checkout
@@ -109,6 +113,67 @@ class Session
 
     def is_in_cache?(session_id)
       return session_id == @cached_session_id
+    end
+
+    def create_session(session_id : String)
+      load_into_cache(session_id)
+    end
+
+    def get_session(session_id : String)
+      conn = @redis.checkout
+      value = conn.get(prefix_session(session_id))
+      @redis.checkin(conn)
+
+      return Session.new(session_id) if value
+      nil
+    end
+
+    def destroy_session(session_id : String)
+      conn = @redis.checkout
+      conn.del(prefix_session(session_id))
+      @redis.checkin(conn)
+    end
+
+    def destroy_all_sessions
+      conn = @redis.checkout
+
+      cursor = 0
+      loop do
+        cursor, keys = conn.scan(cursor, "#{@key_prefix}*")
+        keys = keys.as(Array(Redis::RedisValue)).map(&.to_s)
+        keys.each do |key|
+          conn.del(key)
+        end
+        break if cursor == "0"
+      end
+
+      @redis.checkin(conn)
+    end
+
+    def all_sessions
+      arr = [] of Session
+
+      each_session do |session|
+        arr << session
+      end
+
+      return arr
+    end
+
+    def each_session
+      conn = @redis.checkout
+
+      cursor = 0
+      loop do
+        cursor, keys = conn.scan(cursor, "#{@key_prefix}*")
+        keys = keys.as(Array(Redis::RedisValue)).map(&.to_s)
+        keys.each do |key|
+          yield Session.new(parse_session_id(key.as(String)))
+        end
+        break if cursor == "0"
+      end
+
+      @redis.checkin(conn)
     end
 
     macro define_delegators(vars)
