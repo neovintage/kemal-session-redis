@@ -1,8 +1,15 @@
 require "spec"
+require "io"
 require "../src/kemal-session-redis"
 
-Spec.after_each do
-  # Clear redis out
+Session.config.secret = "super-awesome-secret"
+Session.config.engine = Session::RedisEngine.new
+
+REDIS      = Redis.new
+SESSION_ID = SecureRandom.hex
+
+Spec.before_each do
+  REDIS.flushall
 end
 
 def create_context(session_id : String)
@@ -12,8 +19,9 @@ def create_context(session_id : String)
   # I would rather pass nil if no cookie should be created
   # but that throws an error
   unless session_id == ""
+    Session.config.engine.create_session(session_id)
     cookies = HTTP::Cookies.new
-    cookies << HTTP::Cookie.new(Session.config.cookie_name, session_id)
+    cookies << HTTP::Cookie.new(Session.config.cookie_name, Session.encode(session_id))
     cookies.add_request_headers(headers)
   end
 
