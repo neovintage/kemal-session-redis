@@ -3,6 +3,7 @@
 /lib/
 /.crystal/
 /.shards/
+/dump.rdb
 
 
 # Libraries don't need dependency lock
