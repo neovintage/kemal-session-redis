@@ -57,6 +57,6 @@ class UserCommaSerializer < Session::StorableObject
 
   def self.unserialize(value : String)
     parts = value.split(",")
-    return self.new(parts[0], parts[1])
+    return self.new(parts[0].to_i, parts[1])
   end
 end
