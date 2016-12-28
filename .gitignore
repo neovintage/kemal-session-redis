@@ -4,6 +4,9 @@
 /.crystal/
 /.shards/
 /.crystal-version
+/dump.rdb
+
+>>>>>>> master
 
 # Libraries don't need dependency lock
 # Dependencies will be locked in application that uses them
