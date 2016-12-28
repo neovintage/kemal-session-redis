@@ -13,7 +13,7 @@ class Session
           if pull.kind == :null
             pull.read_next
           else
-            hash[key] = StorableObject.unserialize(pull)
+            hash[key] = StorableObject.unserialize(pull.read_string)
           end
         end
         hash
@@ -71,7 +71,7 @@ class Session
       define_storage({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
     end
 
-    @pool  : ConnectionPool(Redis)
+    @redis  : ConnectionPool(Redis)
     @cache : StorageInstance
     @cached_session_id : String
 
@@ -132,13 +132,13 @@ class Session
     end
 
     def save_cache
-      conn = @pool.checkout
+      conn = @redis.checkout
       conn.set(
         prefix_session(@cached_session_id),
         @cache.to_json,
         ex: Session.config.timeout.total_seconds.to_i
       )
-      @pool.checkin(conn)
+      @redis.checkin(conn)
     end
 
     def is_in_cache?(session_id)
