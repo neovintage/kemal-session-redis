@@ -6,12 +6,42 @@ require "kemal-session"
 
 class Session
   class RedisEngine < Engine
+    module StorableObjectConverter
+      def self.from_json(pull : JSON::PullParser) : Hash(String, StorableObject)
+        hash = Hash(String, StorableObject).new
+        pull.read_object do |key|
+          if pull.kind == :null
+            pull.read_next
+          else
+            hash[key] = StorableObject.unserialize(pull)
+          end
+        end
+        hash
+      end
+
+      def self.to_json(value : Hash(String, StorableObject), io : IO)
+        if value.empty?
+          io << "{}"
+          return
+        end
+
+        io.json_object do |json_obj|
+          value.each do |object_name, storable_obj|
+            json_obj.field object_name, storable_obj.serialize
+          end
+        end
+      end
+    end
+
     class StorageInstance
       macro define_storage(vars)
         JSON.mapping({
           {% for name, type in vars %}
-               {{name.id}}s: Hash(String, {{type}}),
+            {% if name != "object" %}
+              {{name.id}}s: Hash(String, {{type}}),
+            {% end %}
           {% end %}
+          objects: {type: Hash(String, StorableObject), converter: StorableObjectConverter},
         })
 
         {% for name, type in vars %}
@@ -38,26 +68,35 @@ class Session
         end
       end
 
-      define_storage({int: Int32, string: String, float: Float64, bool: Bool})
+      define_storage({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
     end
 
-    @redis : ConnectionPool(Redis)
+    @pool  : ConnectionPool(Redis)
     @cache : StorageInstance
     @cached_session_id : String
 
-    def initialize(options : Hash(Symbol, String))
-      @redis = uninitialized ConnectionPool(Redis)
-
-      if options.has_key?(:uri)
-        uri = URI.parse(options[:uri])
-        options[:host] = uri.host
-        options[:post] = uri.port
+    def initialize(host = "localhost", port = 6379, unixsocket = nil, database = nil, password = nil, url = nil, pool = nil, timeout = 2.0, capacity = 20, key_prefix = "kemal:session:")
+      @pool = uninitialized ConnectionPool(Redis)
+      if !pool.nil?
+        @pool = pool.as(ConnectionPool(Redis))
+      else
+        # Creates a pool of one because the storage engine gets instantiated
+        # every time a sessions gets created. It's recommended a connection
+        # pool be passed because connections can be managed more globally
+        #
+        @pool = ConnectionPool.new(capacity: capacity, timeout: timeout) do
+          Redis.new(
+            host: host,
+            port: port,
+            unixsocket: unixsocket,
+            database: database,
+            password: password
+          )
+        end
       end
-      block = { Redis.new(options) }
-
-      @redis = ConnectionPool.new({capacity: 1, timeout: 5.0}, &block) unless options.has_key?(:connection_pool)
-      @cache = StorageInstance.new
-      @key_prefix = options.has_key?(:key_prefix) ? options[:key_prefix] : "kemal:session:"
+      @cache             = StorageInstance.new
+      @key_prefix        = key_prefix
+      @cached_session_id = ""
     end
 
     def run_gc
@@ -85,13 +124,13 @@ class Session
     end
 
     def save_cache
-      conn = @redis.checkout
+      conn = @pool.checkout
       conn.set(
-        prefix_session(@cached_session_id)
+        prefix_session(@cached_session_id),
         @cache.to_json,
         ex: Session.config.timeout.total_seconds.to_i
       )
-      @redis.checkin(conn)
+      @pool.checkin(conn)
     end
 
     def is_in_cache?(session_id)
@@ -123,6 +162,6 @@ class Session
       {% end %}
     end
 
-    define_delegators({int: Int32, string: String, float: Float64, bool: Bool})
+    define_delegators({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
   end
 end
