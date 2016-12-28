@@ -9,8 +9,13 @@ dependencies:
     github: ysbaddaden/pool
     version: 0.2.3
   redis:
-    github: stefanwille/crystal-redis
-    version: ~> 1.6.7
+    github: kostya/crystal-redis
+    commit: "8d7e44805c64100dbc4c6abfb4a5f33267b77908"
+  # until kostya fix for crystal 0.20.3 can be committed to main repo
+  # a new version of kemal-session-redis wont be released
+  #redis:
+    #github: stefanwille/crystal-redis
+    #version: ~> 1.6.7
 
 authors:
   - Rimas Silkaitis <neovintage@gmail.com>
