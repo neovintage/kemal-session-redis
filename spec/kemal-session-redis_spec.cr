@@ -68,6 +68,26 @@ describe "Session::RedisEngine" do
     end
   end
 
+  describe ".object" do
+    it "can be saved and retrieved" do
+      session = Session.new(create_context(SESSION_ID))
+      u = UserJsonSerializer.new(123, "charlie")
+      session.object("user", u)
+      new_u = session.object("user").as(UserJsonSerializer)
+      new_u.id.should eq(123)
+      new_u.name.should eq("charlie")
+    end
+
+    it "can handle non-json serializers" do
+      session = Session.new(create_context(SESSION_ID))
+      u = UserCommaSerializer.new(456, "lucy")
+      session.object("peanuts", u)
+      new_u = session.object("peanuts").as(UserCommaSerializer)
+      new_u.id.should eq(456)
+      new_u.name.should eq("lucy")
+    end
+  end
+
   describe ".destroy" do
     it "should remove session from redis" do
       session = Session.new(create_context(SESSION_ID))

@@ -6,12 +6,42 @@ require "kemal-session"
 
 class Session
   class RedisEngine < Engine
+    module StorableObjectConverter
+      def self.from_json(pull : JSON::PullParser) : Hash(String, StorableObject)
+        hash = Hash(String, StorableObject).new
+        pull.read_object do |key|
+          if pull.kind == :null
+            pull.read_next
+          else
+            hash[key] = StorableObject.unserialize(pull.read_string)
+          end
+        end
+        hash
+      end
+
+      def self.to_json(value : Hash(String, StorableObject), io : IO)
+        if value.empty?
+          io << "{}"
+          return
+        end
+
+        io.json_object do |json_obj|
+          value.each do |object_name, storable_obj|
+            json_obj.field object_name, storable_obj.serialize
+          end
+        end
+      end
+    end
+
     class StorageInstance
       macro define_storage(vars)
         JSON.mapping({
           {% for name, type in vars %}
-               {{name.id}}s: Hash(String, {{type}}),
+            {% if name != "object" %}
+              {{name.id}}s: Hash(String, {{type}}),
+            {% end %}
           {% end %}
+          objects: {type: Hash(String, StorableObject), converter: StorableObjectConverter},
         })
 
         {% for name, type in vars %}
@@ -38,10 +68,10 @@ class Session
         end
       end
 
-      define_storage({int: Int32, string: String, float: Float64, bool: Bool})
+      define_storage({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
     end
 
-    @redis : ConnectionPool(Redis)
+    @redis  : ConnectionPool(Redis)
     @cache : StorageInstance
     @cached_session_id : String
 
@@ -92,8 +122,8 @@ class Session
       else
         @cache = StorageInstance.new
         conn.set(
-          prefix_session(session_id), 
-          @cache.to_json, 
+          prefix_session(session_id),
+          @cache.to_json,
           ex: Session.config.timeout.total_seconds.to_i
         )
       end
@@ -201,6 +231,6 @@ class Session
       {% end %}
     end
 
-    define_delegators({int: Int32, string: String, float: Float64, bool: Bool})
+    define_delegators({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
   end
 end

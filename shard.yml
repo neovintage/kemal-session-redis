@@ -1,16 +1,16 @@
 name: kemal-session-redis
-version: 0.2.0
+version: 0.3.0
 
 dependencies:
   kemal-session:
     github: kemalcr/kemal-session
-    version: 0.5.0
+    branch: master
   pool:
     github: ysbaddaden/pool
     version: 0.2.3
   redis:
     github: stefanwille/crystal-redis
-    version: ~> 1.6.7
+    version: ~> 1.7.0
 
 authors:
   - Rimas Silkaitis <neovintage@gmail.com>
