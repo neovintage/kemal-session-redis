@@ -10,7 +10,7 @@ Add this to your application's `shard.yml`:
 dependencies:
   kemal-session-redis:
     github: neovintage/kemal-session-redis
-    version: 0.1.0
+    version: 0.3.0
 ```
 
 ## Usage
@@ -59,11 +59,25 @@ to serve the wider application and then that passed to the RedisEngine initializ
 If no options are passed the `RedisEngine` will try to connect to a Redis using 
 default settings.
 
-### Best Practice
+## Best Practices
+
+### Creating a Client
 
 It's very easy for client code to leak Redis connections and you should 
 pass a pool of connections that's used throughout Kemal and the 
 session engine.
+
+### Session Administration Performance
+
+`Session.all` and `Session.each` perform a bit differently under the hood. If
+`Session.all` is used, the `RedisEngine` will use the `SCAN` command in Redis
+and page through all of the sessions, hydrating the Session object and returing
+an array of all sessions. If session storage has a large number of sessions this
+could have performance implications. `Session.each` also uses the `SCAN` command
+in Redis but instead of creating one large array and enumerating through it,
+`Session.each` will only hydrate and yield the keys returned from the current
+cursor. Once that block of sessions has been yielded, RedisEngine will retrieve
+the next block of sessions.
 
 ## Development
 
