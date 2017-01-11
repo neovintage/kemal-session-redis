@@ -68,7 +68,7 @@ class Session
         end
       end
 
-      define_storage({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
+      define_storage({int: Int32, bigint: Int64, string: String, float: Float64, bool: Bool, object: StorableObject})
     end
 
     @redis  : ConnectionPool(Redis)
@@ -231,6 +231,6 @@ class Session
       {% end %}
     end
 
-    define_delegators({int: Int32, string: String, float: Float64, bool: Bool, object: StorableObject})
+    define_delegators({int: Int32, bigint: Int64, string: String, float: Float64, bool: Bool, object: StorableObject})
   end
 end
