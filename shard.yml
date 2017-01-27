@@ -3,8 +3,8 @@ version: 0.3.0
 
 dependencies:
   kemal-session:
-    github: kemalcr/kemal-session
-    branch: master
+    github: neovintage/kemal-session
+    branch: memory-object-take-two
   pool:
     github: ysbaddaden/pool
     version: 0.2.3

@@ -29,34 +29,22 @@ def create_context(session_id : String)
   return HTTP::Server::Context.new(request, response)
 end
 
-class UserJsonSerializer < Session::StorableObject
+class UserJsonSerializer
   JSON.mapping({
     id: Int32,
     name: String
   })
+  include Session::StorableObject
 
   def initialize(@id : Int32, @name : String); end
-
-  def serialize
-    self.to_json
-  end
-
-  def self.unserialize(value : String)
-    UserJsonSerializer.from_json(value)
-  end
 end
 
-class UserCommaSerializer < Session::StorableObject
-  property id, name
+class AnotherSerializer
+  JSON.mapping({
+    id: Int32,
+    name: String
+  })
+  include Session::StorableObject
 
   def initialize(@id : Int32, @name : String); end
-
-  def serialize
-    return "#{@id},#{@name}"
-  end
-
-  def self.unserialize(value : String)
-    parts = value.split(",")
-    return self.new(parts[0].to_i, parts[1])
-  end
 end
