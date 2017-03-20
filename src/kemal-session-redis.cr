@@ -44,7 +44,7 @@ class Session
         string: String,
         float: Float64,
         bool: Bool,
-        object: StorableObjects
+        object: StorableObject
       })
     end
 
@@ -214,7 +214,7 @@ class Session
       string: String,
       float: Float64,
       bool: Bool,
-      object: StorableObjects,
+      object: StorableObject,
     })
   end
 end
