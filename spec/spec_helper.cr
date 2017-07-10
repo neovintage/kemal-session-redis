@@ -2,8 +2,8 @@ require "spec"
 require "io"
 require "../src/kemal-session-redis"
 
-Session.config.secret = "super-awesome-secret"
-Session.config.engine = Session::RedisEngine.new
+Kemal::Session.config.secret = "super-awesome-secret"
+Kemal::Session.config.engine = Kemal::Session::RedisEngine.new
 
 REDIS      = Redis.new
 SESSION_ID = SecureRandom.hex
@@ -19,9 +19,9 @@ def create_context(session_id : String)
   # I would rather pass nil if no cookie should be created
   # but that throws an error
   unless session_id == ""
-    Session.config.engine.create_session(session_id)
+    Kemal::Session.config.engine.create_session(session_id)
     cookies = HTTP::Cookies.new
-    cookies << HTTP::Cookie.new(Session.config.cookie_name, Session.encode(session_id))
+    cookies << HTTP::Cookie.new(Kemal::Session.config.cookie_name, Kemal::Session.encode(session_id))
     cookies.add_request_headers(headers)
   end
 
@@ -34,7 +34,7 @@ class UserJsonSerializer
     id: Int32,
     name: String
   })
-  include Session::StorableObject
+  include Kemal::Session::StorableObject
 
   def initialize(@id : Int32, @name : String); end
 

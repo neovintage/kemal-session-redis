@@ -4,6 +4,7 @@ require "redis"
 require "pool/connection"
 require "kemal-session"
 
+module Kemal
 class Session
   class RedisEngine < Engine
     class StorageInstance
@@ -217,4 +218,5 @@ class Session
       object: Session::StorableObject::StorableObjectContainer,
     })
   end
+end
 end
