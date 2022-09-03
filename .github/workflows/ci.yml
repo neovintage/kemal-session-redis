@@ -1,0 +1,54 @@
+name: CI
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: "0 0 * * 0"
+jobs:
+  container-job:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        stable: [true]
+        crystal:
+          - 1.1.1
+          - 1.2.2
+          - 1.3.2
+          - 1.4.1
+          - 1.5.0
+        include:
+          - os: ubuntu-latest
+            crystal: nightly
+            stable: false
+          - os: macos-latest
+            crystal: nightly
+            stable: false
+    continue-on-error: ${{ !matrix.stable }}
+    runs-on: ${{ matrix.os }}
+    name: 'crystal: ${{ matrix.crystal }}, os: ${{ matrix.os }}'
+    steps:
+      - name: Download source
+        uses: actions/checkout@v2
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: ${{ matrix.crystal }}
+      - name: Cache shards
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/shards
+          key: ${{ runner.os }}-${{matrix.crystal}}-shards-${{ hashFiles('shard.yml') }}
+          restore-keys: ${{ runner.os }}-shards-
+      - name: Install shards
+        run: shards update
+      - name: Redis on ${{ runner.os }}
+        uses: shogo82148/actions-setup-redis@v1
+        id: main_redis
+        with:
+          redis-version: 6.2
+      - run: redis-cli info | grep version
+      - name: Run tests
+        run: crystal spec
