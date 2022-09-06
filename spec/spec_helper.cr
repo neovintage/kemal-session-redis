@@ -2,8 +2,8 @@ require "spec"
 require "io"
 require "../src/kemal-session-redis"
 
-Session.config.secret = "super-awesome-secret"
-Session.config.engine = Session::RedisEngine.new
+Kemal::Session.config.secret = "super-awesome-secret"
+Kemal::Session.config.engine = Kemal::Session::RedisEngine.new
 
 REDIS      = Redis.new
 SESSION_ID = SecureRandom.hex
@@ -30,19 +30,23 @@ def create_context(session_id : String)
 end
 
 class UserJsonSerializer
-  JSON.mapping({
-    id: Int32,
-    name: String
-  })
-  include Session::StorableObject
+  #JSON.mapping({
+    #id: Int32,
+    #name: String
+  #})
+  include JSON::Serializable
+  include Kemal::Session::StorableObject
+
+  property id : Int32
+  property name : String
 
   def initialize(@id : Int32, @name : String); end
 
-  def serialize
-    self.to_json
-  end
+  #def self.to_json
+    #self.to_json
+  #end
 
-  def self.unserialize(value : String)
-    UserJsonSerializer.from_json(value)
-  end
+  #def self.unserialize(value : String)
+    #UserJsonSerializer.from_json(value)
+  #end
 end
