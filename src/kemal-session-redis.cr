@@ -9,15 +9,9 @@ module Kemal
     class RedisEngine < Engine
       class StorageInstance
         macro define_storage(vars)
-          JSON.mapping({
-            {% for name, type in vars %}
-              {{name.id}}s: Hash(String, {{type}}),
-            {% end %}
-          })
-
           {% for name, type in vars %}
-            @{{name.id}}s = Hash(String, {{type}}).new
-            getter {{name.id}}s
+            @[JSON::Field(key: {{name.id}})]
+            getter {{name.id}}s : Hash(String, {{type}})
 
             def {{name.id}}(k : String) : {{type}}
               return @{{name.id}}s[k]
@@ -45,7 +39,7 @@ module Kemal
           string: String,
           float: Float64,
           bool: Bool,
-          object: Session::StorableObject::StorableObjectContainer
+          object: Kemal::Session::StorableObject::StorableObjectContainer
         })
       end
 
@@ -102,7 +96,7 @@ module Kemal
           conn.set(
             prefix_session(session_id),
             @cache.to_json,
-            ex: Session.config.timeout.total_seconds.to_i
+            ex: Kemal::Session.config.timeout.total_seconds.to_i
           )
         end
         @redis.checkin(conn)
@@ -114,7 +108,7 @@ module Kemal
         conn.set(
           prefix_session(@cached_session_id),
           @cache.to_json,
-          ex: Session.config.timeout.total_seconds.to_i
+          ex: Kemal::Session.config.timeout.total_seconds.to_i
         )
         @redis.checkin(conn)
       end
@@ -127,12 +121,12 @@ module Kemal
         load_into_cache(session_id)
       end
 
-      def get_session(session_id : String)
+      def get_session(session_id : String) : (Kemal::Session | Nil)
         conn = @redis.checkout
         value = conn.get(prefix_session(session_id))
         @redis.checkin(conn)
 
-        return Session.new(session_id) if value
+        return Kemal::Session.new(session_id) if value
         nil
       end
 
@@ -158,8 +152,8 @@ module Kemal
         @redis.checkin(conn)
       end
 
-      def all_sessions
-        arr = [] of Session
+      def all_sessions : Array(Kemal::Session)
+        arr = [] of Kemal::Session
 
         each_session do |session|
           arr << session
@@ -176,7 +170,7 @@ module Kemal
           cursor, keys = conn.scan(cursor, "#{@key_prefix}*")
           keys = keys.as(Array(Redis::RedisValue)).map(&.to_s)
           keys.each do |key|
-            yield Session.new(parse_session_id(key.as(String)))
+            yield Kemal::Session.new(parse_session_id(key.as(String)))
           end
           break if cursor == "0"
         end
@@ -215,7 +209,7 @@ module Kemal
         string: String,
         float: Float64,
         bool: Bool,
-        object: Session::StorableObject::StorableObjectContainer,
+        object: Kemal::Session::StorableObject::StorableObjectContainer,
       })
     end
   end
