@@ -104,13 +104,16 @@ describe "Kemal::Session::RedisEngine" do
       session = Kemal::Session.new(create_context(SESSION_ID))
       value = REDIS.get("kemal:session:#{SESSION_ID}")
       value.should_not be_nil
-      Kemal::Session.destroy(SESSION_ID).should be_truthy
+      if value
+        Kemal::Session.destroy(SESSION_ID)
+        Kemal::Session.get(SESSION_ID).should be_nil
+      end
     end
   end
 
   describe "#destroy_all" do
     it "should remove all sessions in redis" do
-      5.times { Kemal::Session.new(create_context(SecureRandom.hex)) }
+      5.times { Kemal::Session.new(create_context(Random::Secure.hex)) }
       arr = Kemal::Session.all
       arr.size.should eq(5)
       Kemal::Session.destroy_all
@@ -151,7 +154,7 @@ describe "Kemal::Session::RedisEngine" do
     end
 
     it "should return an array of Kemal::Sessions" do
-      3.times { Kemal::Session.new(create_context(SecureRandom.hex)) }
+      3.times { Kemal::Session.new(create_context(Random::Secure.hex)) }
       arr = Kemal::Session.all
       arr.is_a?(Array).should be_true
       arr.size.should eq(3)
@@ -160,7 +163,7 @@ describe "Kemal::Session::RedisEngine" do
 
   describe "#each" do
     it "should iterate over all sessions" do
-      5.times { Kemal::Session.new(create_context(SecureRandom.hex)) }
+      5.times { Kemal::Session.new(create_context(Random::Secure.hex)) }
       count = 0
       Kemal::Session.each do |session|
         count = count + 1

@@ -8,6 +8,8 @@ module Kemal
   class Session
     class RedisEngine < Engine
       class StorageInstance
+        include JSON::Serializable
+
         macro define_storage(vars)
           {% for name, type in vars %}
             @[JSON::Field(key: {{name.id}})]
@@ -64,7 +66,7 @@ module Kemal
           @redis = pool.as(ConnectionPool(Redis))
         end
 
-        @cache = StorageInstance.new
+        @cache = Kemal::Session::RedisEngine::StorageInstance.new
         @key_prefix = key_prefix
         @cached_session_id = ""
       end
@@ -90,7 +92,7 @@ module Kemal
         conn = @redis.checkout
         value = conn.get(prefix_session(session_id))
         if !value.nil?
-          @cache = StorageInstance.from_json(value)
+          @cache = Kemal::Session::RedisEngine::StorageInstance.from_json(value)
         else
           @cache = StorageInstance.new
           conn.set(
