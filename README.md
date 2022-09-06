@@ -1,6 +1,6 @@
 # kemal-session-redis
 
-[![CI](https://github.com/neovintage/kemal-session-redis/actions/workflows/ci.yml/badge.svg)](https://github.com/neovintage/kemal-session-redis/actions/workflows/ci.yml)
+[![CI](https://github.com/neovintage/kemal-session-redis/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/neovintage/kemal-session-redis/actions/workflows/ci.yml)
 
 Redis session store for [kemal-session](https://github.com/kemalcr/kemal-session).
 
