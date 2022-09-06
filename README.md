@@ -1,5 +1,7 @@
 # kemal-session-redis
 
+[![CI](https://github.com/neovintage/kemal-session-redis/actions/workflows/ci.yml/badge.svg)](https://github.com/neovintage/kemal-session-redis/actions/workflows/ci.yml)
+
 Redis session store for [kemal-session](https://github.com/kemalcr/kemal-session).
 
 ## Installation
@@ -56,15 +58,15 @@ RedisEngine will create a connection pool for you. The pool will have 20 connect
 and a timeout of 2 seconds. It's recommended that a connection pool be created
 to serve the wider application and then that passed to the RedisEngine initializer.
 
-If no options are passed the `RedisEngine` will try to connect to a Redis using 
+If no options are passed the `RedisEngine` will try to connect to a Redis using
 default settings.
 
 ## Best Practices
 
 ### Creating a Client
 
-It's very easy for client code to leak Redis connections and you should 
-pass a pool of connections that's used throughout Kemal and the 
+It's very easy for client code to leak Redis connections and you should
+pass a pool of connections that's used throughout Kemal and the
 session engine.
 
 ### Session Administration Performance
