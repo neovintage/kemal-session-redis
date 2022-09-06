@@ -97,3 +97,5 @@ specs.
 ## Contributors
 
 - [[neovintage](https://github.com/neovintage)] Rimas Silkaitis - creator, maintainer
+- [[crisward](https://github.com/crisward)] Cris Ward
+- [[fdocr](https://github.com/fdocr)] Fernando Valverde
