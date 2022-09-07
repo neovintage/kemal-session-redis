@@ -12,7 +12,7 @@ Add this to your application's `shard.yml`:
 dependencies:
   kemal-session-redis:
     github: neovintage/kemal-session-redis
-    version: 0.3.0
+    version: 1.0.0
 ```
 
 ## Usage
@@ -22,10 +22,10 @@ require "kemal"
 require "kemal-session"
 require "kemal-session-redis"
 
-Session.config do |config|
+Kemal::Session.config do |config|
   config.cookie_name = "redis_test"
   config.secret = "a_secret"
-  config.engine = Session::RedisEngine.new(host: "localhost", port: 1234)
+  config.engine = Kemal::Session::RedisEngine.new(host: "localhost", port: 1234)
   config.timeout = Time::Span.new(1, 0, 0)
 end
 
@@ -71,13 +71,13 @@ session engine.
 
 ### Session Administration Performance
 
-`Session.all` and `Session.each` perform a bit differently under the hood. If
-`Session.all` is used, the `RedisEngine` will use the `SCAN` command in Redis
+`Kemal::Session.all` and `Kemal::Session.each` perform a bit differently under the hood. If
+`Kemal::Session.all` is used, the `RedisEngine` will use the `SCAN` command in Redis
 and page through all of the sessions, hydrating the Session object and returing
 an array of all sessions. If session storage has a large number of sessions this
-could have performance implications. `Session.each` also uses the `SCAN` command
+could have performance implications. `Kemal::Session.each` also uses the `SCAN` command
 in Redis but instead of creating one large array and enumerating through it,
-`Session.each` will only hydrate and yield the keys returned from the current
+`Kemal::Session.each` will only hydrate and yield the keys returned from the current
 cursor. Once that block of sessions has been yielded, RedisEngine will retrieve
 the next block of sessions.
 
