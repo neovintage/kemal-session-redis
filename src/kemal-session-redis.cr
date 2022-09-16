@@ -1,7 +1,6 @@
 require "uri"
 require "json"
 require "redis"
-require "pool/connection"
 require "kemal-session"
 
 module Kemal
@@ -36,35 +35,29 @@ module Kemal
         end
 
         define_storage({
-          int: Int32,
+          int:    Int32,
           bigint: Int64,
           string: String,
-          float: Float64,
-          bool: Bool,
-          object: Kemal::Session::StorableObject::StorableObjectContainer
+          float:  Float64,
+          bool:   Bool,
+          object: Kemal::Session::StorableObject::StorableObjectContainer,
         })
       end
 
-      @redis  : ConnectionPool(Redis)
+      @redis : Redis::PooledClient
       @cache : StorageInstance
       @cached_session_id : String
 
-      def initialize(host = "localhost", port = 6379, password = nil, database = 0, capacity = 20, timeout = 2.0, unixsocket = nil, pool = nil, key_prefix = "kemal:session:")
-        @redis = uninitialized ConnectionPool(Redis)
-
-        if pool.nil?
-          @redis = ConnectionPool.new(capacity: capacity, timeout: timeout) do
-            Redis.new(
-              host: host,
-              port: port,
-              database: database,
-              unixsocket: unixsocket,
-              password: password
-            )
-          end
-        else
-          @redis = pool.as(ConnectionPool(Redis))
-        end
+      def initialize(host = "localhost", port = 6379, password = nil, database = 0, capacity = 20, timeout = 2.0, unixsocket = nil, key_prefix = "kemal:session:")
+        @redis = Redis::PooledClient.new(
+          host: host,
+          port: port,
+          database: database,
+          unixsocket: unixsocket,
+          password: password,
+          pool_size: capacity,
+          pool_timeout: timeout
+        )
 
         @cache = Kemal::Session::RedisEngine::StorageInstance.new
         @key_prefix = key_prefix
@@ -89,69 +82,60 @@ module Kemal
 
       def load_into_cache(session_id)
         @cached_session_id = session_id
-        conn = @redis.checkout
-        value = conn.get(prefix_session(session_id))
-        if !value.nil?
-          @cache = Kemal::Session::RedisEngine::StorageInstance.from_json(value)
-        else
+        value = @redis.get(prefix_session(session_id))
+
+        if value.nil?
           @cache = StorageInstance.new
-          conn.set(
+
+          @redis.set(
             prefix_session(session_id),
             @cache.to_json,
             ex: Kemal::Session.config.timeout.total_seconds.to_i
           )
+        else
+          @cache = StorageInstance.from_json(value)
         end
-        @redis.checkin(conn)
-        return @cache
+
+        @cache
       end
 
       def save_cache
-        conn = @redis.checkout
-        conn.set(
+        @redis.set(
           prefix_session(@cached_session_id),
           @cache.to_json,
           ex: Kemal::Session.config.timeout.total_seconds.to_i
         )
-        @redis.checkin(conn)
       end
 
       def is_in_cache?(session_id)
-        return session_id == @cached_session_id
+        session_id == @cached_session_id
       end
 
       def create_session(session_id : String)
         load_into_cache(session_id)
       end
 
-      def get_session(session_id : String) : (Kemal::Session | Nil)
-        conn = @redis.checkout
-        value = conn.get(prefix_session(session_id))
-        @redis.checkin(conn)
+      def get_session(session_id : String) : Session?
+        value = @redis.get(prefix_session(session_id))
 
-        return Kemal::Session.new(session_id) if value
-        nil
+        value ? Kemal::Session.new(session_id) : nil
       end
 
       def destroy_session(session_id : String)
-        conn = @redis.checkout
-        conn.del(prefix_session(session_id))
-        @redis.checkin(conn)
+        @redis.del(prefix_session(session_id))
       end
 
       def destroy_all_sessions
-        conn = @redis.checkout
-
         cursor = 0
+
         loop do
-          cursor, keys = conn.scan(cursor, "#{@key_prefix}*")
+          cursor, keys = @redis.scan(cursor, "#{@key_prefix}*")
           keys = keys.as(Array(Redis::RedisValue)).map(&.to_s)
-          keys.each do |key|
-            conn.del(key)
-          end
+
+          keys.each { |key| @redis.del(key) }
+
           break if cursor == "0"
         end
-
-        @redis.checkin(conn)
       end
 
       def all_sessions : Array(Kemal::Session)
@@ -161,23 +145,22 @@ module Kemal
           arr << session
         end
 
-        return arr
+        arr
       end
 
       def each_session
-        conn = @redis.checkout
-
         cursor = 0
+
         loop do
-          cursor, keys = conn.scan(cursor, "#{@key_prefix}*")
+          cursor, keys = @redis.scan(cursor, "#{@key_prefix}*")
           keys = keys.as(Array(Redis::RedisValue)).map(&.to_s)
+
           keys.each do |key|
             yield Kemal::Session.new(parse_session_id(key.as(String)))
           end
+
           break if cursor == "0"
         end
-
-        @redis.checkin(conn)
       end
 
       macro define_delegators(vars)
@@ -206,11 +189,11 @@ module Kemal
       end
 
       define_delegators({
-        int: Int32,
+        int:    Int32,
         bigint: Int64,
         string: String,
-        float: Float64,
-        bool: Bool,
+        float:  Float64,
+        bool:   Bool,
         object: Kemal::Session::StorableObject::StorableObjectContainer,
       })
     end
