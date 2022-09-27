@@ -12,7 +12,7 @@ Add this to your application's `shard.yml`:
 dependencies:
   kemal-session-redis:
     github: neovintage/kemal-session-redis
-    version: 1.0.0
+    version: 1.0.1
 ```
 
 ## Usage
