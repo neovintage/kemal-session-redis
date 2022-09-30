@@ -50,13 +50,11 @@ The engine comes with a number of configuration options:
 | database | which database to use when after connecting to redis. defaults to 0 |
 | capacity | how many connections the connection pool should create. defaults to 20 |
 | timeout | how long until a connection is considered long-running. defaults to 2.0 (seconds) |
-| pool | an instance of `ConnectionPool(Redis)`. This overrides any setting in host or unixsocket |
 | key_prefix | when saving sessions to redis, how should the keys be namespaced. defaults to `kemal:session:` |
 
-When the Redis engine is instantiated and a connection pool isn't passed,
-RedisEngine will create a connection pool for you. The pool will have 20 connections
-and a timeout of 2 seconds. It's recommended that a connection pool be created
-to serve the wider application and then that passed to the RedisEngine initializer.
+When the Redis engine is instantiated,
+`RedisEngine` will create a connection pool for you. The pool will have 20 connections
+and a timeout of 2 seconds.
 
 If no options are passed the `RedisEngine` will try to connect to a Redis using
 default settings.

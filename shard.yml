@@ -5,9 +5,6 @@ dependencies:
   kemal-session:
     github: kemalcr/kemal-session
     version: ~> 1.0
-  pool:
-    github: ysbaddaden/pool
-    version: 0.2.3
   redis:
     github: stefanwille/crystal-redis
     version: ~> 2.8.3
